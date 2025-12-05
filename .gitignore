@@ -1,0 +1,80 @@
+# =========================
+# Unity Generated Files
+# =========================
+/[Ll]ibrary/
+/[Tt]emp/
+/[Oo]bj/
+/[Bb]uild/
+/[Bb]uilds/
+/[Ll]ogs/
+/[Uu]ser[Ss]ettings/
+
+# MemoryCaptures can get excessive
+/[Mm]emoryCaptures/
+
+# Asset meta data should only be ignored when the associated asset is also ignored
+!/[Aa]ssets/**/*.meta
+
+# Unity3D generated file on crash reports
+sysinfo.txt
+
+# Unity3D generated file on build
+*.stackdump
+
+# =========================
+# Visual Studio / WinForms / .NET
+# =========================
+# User-specific files
+*.rsuser
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# User-specific files (MonoDevelop/Unity Studio)
+*.userprefs
+
+# Build results
+[Dd]ebug/
+[Dd]ebugPublic/
+[Rr]elease/
+[Rr]eleases/
+x64/
+x86/
+[Aa][Rr][Mm]/
+[Aa][Rr][Mm]64/
+bld/
+[Bb]in/
+[Oo]bj/
+[Ll]og/
+
+# Visual Studio 2015/2017/2019/2022 cache/options directory
+.vs/
+
+# MSTest test Results
+[Tt]est[Rr]esult*/
+[Bb]uild[Ll]og.*
+
+# =========================
+# OS Generated Files (Rác hệ điều hành)
+# =========================
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# =========================
+# Các file mở rộng không cần thiết
+# =========================
+*.pidb.meta
+*.pdb.meta
+*.unityproj
+*.booproj
+*.svd
+*.pdb
+*.opentns
+*.opendb
+*.pidb
