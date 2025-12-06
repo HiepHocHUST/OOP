@@ -98,7 +98,7 @@ namespace WindowsForm
             try
             {
                 // Thay đường dẫn ảnh của bạn vào đây
-                picBackground.Image = Image.FromFile(@"D:\New folder (2)\trang_chủ_admin_game_stickman.png");
+                picBackground.Image = Properties.Resources.trang_chủ_admin_game_stickman;
             }
             catch { }
             this.Controls.Add(picBackground);

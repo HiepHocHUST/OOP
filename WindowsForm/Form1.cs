@@ -3,13 +3,12 @@ using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Windows.Forms;
 
-// SỬA: Đổi namespace từ StickmanLogin thành WindowsForm để khớp với Program
 namespace WindowsForm
 {
     public class Form1 : Form
     {
         // ==========================================
-        // 1. CẤU HÌNH MÀU SẮC & FONT
+        // 1. CẤU HÌNH CƠ BẢN
         // ==========================================
         private readonly Color clrBackground = ColorTranslator.FromHtml("#f5e9d3");
         private readonly Color clrSurface = ColorTranslator.FromHtml("#eaddc7");
@@ -20,6 +19,7 @@ namespace WindowsForm
 
         private SketchPanel panelMain;
         private Label lblFooter;
+        private PictureBox picBackground; // <--- Đối tượng mới để chứa ảnh nền
 
         public Form1()
         {
@@ -31,126 +31,64 @@ namespace WindowsForm
         private void SetupForm()
         {
             this.Text = "Stickman Adventures - Desktop Edition";
-            this.Size = new Size(1200, 800); // Điều chỉnh size mặc định cho vừa màn hình laptop
+            this.Size = new Size(1200, 800);
             this.MinimumSize = new Size(800, 600);
             this.StartPosition = FormStartPosition.CenterScreen;
-            this.BackColor = clrBackground;
             this.DoubleBuffered = true;
-            this.ResizeRedraw = true;
         }
 
         // ==========================================
-        // 2. VẼ TOÀN BỘ GIAO DIỆN NỀN (GRID + STICKMAN + TEXT)
-        // ==========================================
-        protected override void OnPaint(PaintEventArgs e)
-        {
-            base.OnPaint(e);
-            Graphics g = e.Graphics;
-            g.SmoothingMode = SmoothingMode.AntiAlias;
-            g.TextRenderingHint = System.Drawing.Text.TextRenderingHint.AntiAlias;
-
-            // --- A. Vẽ Grid (Giấy tập) ---
-            using (Pen gridPen = new Pen(Color.FromArgb(30, clrBorder), 1))
-            {
-                int step = 40;
-                for (int x = 0; x < this.Width; x += step) g.DrawLine(gridPen, x, 0, x, this.Height);
-                for (int y = 0; y < this.Height; y += step) g.DrawLine(gridPen, 0, y, this.Width, y);
-            }
-
-            // --- B. Tính toán tọa độ ---
-            float leftCenterX = this.Width * 0.3f; // Dời sang phải một chút cho cân
-            float centerY = this.Height * 0.55f;
-            float scale = Math.Min(this.Width, this.Height) / 600f; // Giảm tỉ lệ scale nhẹ để hình không quá to
-
-            // --- C. VẼ CHỮ TRỰC TIẾP ---
-            // 1. Vẽ chữ STICKMAN
-            using (Font titleFont = new Font(handFont, 48 * scale, FontStyle.Bold))
-            using (Brush brush = new SolidBrush(clrText))
-            {
-                string text = "STICKMAN";
-                SizeF textSize = g.MeasureString(text, titleFont);
-                g.DrawString(text, titleFont, brush, leftCenterX - (textSize.Width / 2), centerY - (250 * scale));
-            }
-
-            // 2. Vẽ chữ ADVENTURES
-            using (Font titleFont = new Font(handFont, 45 * scale, FontStyle.Bold))
-            using (Brush brush = new SolidBrush(clrPrimary))
-            {
-                string text = "ADVENTURES";
-                SizeF textSize = g.MeasureString(text, titleFont);
-                g.DrawString(text, titleFont, brush, leftCenterX - (textSize.Width / 3), centerY - (180 * scale));
-            }
-
-            // 3. Vẽ Slogan
-            using (Font sloganFont = new Font(handFont, 14 * scale, FontStyle.Italic))
-            using (Brush brush = new SolidBrush(clrBorder))
-            {
-                string text = "Join the journey on your desktop.";
-                SizeF textSize = g.MeasureString(text, sloganFont);
-                g.DrawString(text, sloganFont, brush, leftCenterX - (textSize.Width / 2), centerY - (100 * scale));
-            }
-
-            // --- D. Vẽ Stickman ---
-            using (Pen stickPen = new Pen(clrText, 5 * scale))
-            {
-                stickPen.StartCap = LineCap.Round;
-                stickPen.EndCap = LineCap.Round;
-
-                // Đầu
-                float headSize = 60 * scale;
-                g.DrawEllipse(stickPen, leftCenterX - headSize / 2, centerY - 150 * scale, headSize, headSize);
-
-                // Thân
-                g.DrawLine(stickPen, leftCenterX, centerY - 90 * scale, leftCenterX, centerY + 60 * scale);
-
-                // Tay
-                g.DrawLine(stickPen, leftCenterX, centerY - 60 * scale, leftCenterX - 50 * scale, centerY + 20 * scale);
-                g.DrawLine(stickPen, leftCenterX, centerY - 60 * scale, leftCenterX + 60 * scale, centerY - 100 * scale);
-
-                // Chân
-                g.DrawLine(stickPen, leftCenterX, centerY + 60 * scale, leftCenterX - 40 * scale, centerY + 160 * scale);
-                g.DrawLine(stickPen, leftCenterX, centerY + 60 * scale, leftCenterX + 40 * scale, centerY + 160 * scale);
-            }
-        }
-
-        // ==========================================
-        // 3. KHỞI TẠO CONTROLS
+        // 2. KHỞI TẠO GIAO DIỆN (Đã sửa đổi)
         // ==========================================
         private void InitializeCustomControls()
         {
-            // --- Panel Login ---
+            // --- A. TẠO BACKGROUND (PICTUREBOX) ---
+            picBackground = new PictureBox();
+            picBackground.Dock = DockStyle.Fill; // Tràn đầy màn hình
+            picBackground.SizeMode = PictureBoxSizeMode.StretchImage; // Co giãn ảnh cho vừa khung
+            picBackground.BackColor = clrBackground; // Màu nền dự phòng nếu chưa có ảnh
+
+            try
+            {
+                // [QUAN TRỌNG]: BẠN HÃY THAY ĐƯỜNG DẪN ẢNH CỦA BẠN VÀO DƯỚI ĐÂY
+                // Ví dụ: @"C:\Users\Admin\Pictures\game_bg.jpg"
+                picBackground.Image = Properties.Resources.trang_chủ_admin_game_stickman;
+            }
+            catch
+            {
+                // Nếu không tìm thấy ảnh thì thôi, giữ màu nền mặc định
+            }
+
+            this.Controls.Add(picBackground);
+
+
+            // --- B. PANEL ĐĂNG NHẬP (Giữ nguyên thiết kế cũ) ---
+            // Lưu ý: Add vào picBackground để nó nằm đè lên ảnh
             panelMain = new SketchPanel(clrSurface, clrBorder);
-            panelMain.Size = new Size(400, 450); // Resize nhẹ
-            this.Controls.Add(panelMain);
+            panelMain.Size = new Size(400, 450);
+            picBackground.Controls.Add(panelMain); // <--- Add vào PictureBox
 
             InitializeLoginPanelContent();
 
-            // --- Footer ---
+            // --- C. FOOTER ---
             lblFooter = new Label();
             lblFooter.Text = "© 2023 Stick Studios - Desktop Edition v2.0";
             lblFooter.Font = new Font("Arial", 10, FontStyle.Regular);
-            lblFooter.ForeColor = clrBorder;
+            lblFooter.ForeColor = Color.White; // Đổi màu chữ footer sang trắng cho dễ nhìn trên nền ảnh
             lblFooter.AutoSize = true;
             lblFooter.BackColor = Color.Transparent;
-            this.Controls.Add(lblFooter);
+
+            // Add Footer vào PictureBox luôn để nền trong suốt đè lên ảnh
+            picBackground.Controls.Add(lblFooter);
         }
 
+        // --- Hàm này giữ nguyên nội dung bên trong, chỉ thay đổi vị trí Add controls ---
         private void InitializeLoginPanelContent()
         {
-            Label lblHeader = new Label();
-            lblHeader.Text = "Welcome Back!";
-            lblHeader.Font = new Font(handFont, 20, FontStyle.Bold);
-            lblHeader.ForeColor = clrText;
-            lblHeader.AutoSize = true;
-            lblHeader.Location = new Point(30, 25);
+            Label lblHeader = new Label() { Text = "Welcome Back!", Font = new Font(handFont, 20, FontStyle.Bold), ForeColor = clrText, AutoSize = true, Location = new Point(30, 25) };
             panelMain.Controls.Add(lblHeader);
 
-            Label lblUser = new Label();
-            lblUser.Text = "Username";
-            lblUser.Font = new Font(handFont, 12, FontStyle.Bold);
-            lblUser.ForeColor = clrText;
-            lblUser.AutoSize = true;
-            lblUser.Location = new Point(30, 80);
+            Label lblUser = new Label() { Text = "Username", Font = new Font(handFont, 12, FontStyle.Bold), ForeColor = clrText, AutoSize = true, Location = new Point(30, 80) };
             panelMain.Controls.Add(lblUser);
 
             SketchTextBox txtUser = new SketchTextBox(clrBackground, clrBorder, clrText);
@@ -158,20 +96,21 @@ namespace WindowsForm
             txtUser.Size = new Size(340, 45);
             panelMain.Controls.Add(txtUser);
 
-            Label lblPass = new Label();
-            lblPass.Text = "Password";
-            lblPass.Font = new Font(handFont, 12, FontStyle.Bold);
-            lblPass.ForeColor = clrText;
-            lblPass.AutoSize = true;
-            lblPass.Location = new Point(30, 170);
+            Label lblPass = new Label() { Text = "Password", Font = new Font(handFont, 12, FontStyle.Bold), ForeColor = clrText, AutoSize = true, Location = new Point(30, 170) };
             panelMain.Controls.Add(lblPass);
 
+            SketchTextBox txtPass = new SketchTextBox(clrBackground, clrBorder, clrText, true);
+            txtPass.Location = new Point(30, 200);
+            txtPass.Size = new Size(340, 45);
+            panelMain.Controls.Add(txtPass);
+
+            // --- Save Slot ---
             Label lblSlot = new Label();
             lblSlot.Text = "Select Save Slot:";
             lblSlot.Font = new Font(handFont, 10, FontStyle.Bold);
             lblSlot.ForeColor = clrText;
             lblSlot.AutoSize = true;
-            lblSlot.Location = new Point(30, 260); // Vị trí dưới password
+            lblSlot.Location = new Point(30, 260);
             panelMain.Controls.Add(lblSlot);
 
             ComboBox cboSlot = new ComboBox();
@@ -179,24 +118,19 @@ namespace WindowsForm
             cboSlot.BackColor = clrBackground;
             cboSlot.FlatStyle = FlatStyle.Flat;
             cboSlot.DropDownStyle = ComboBoxStyle.DropDownList;
-            // Thêm dữ liệu Slot
             cboSlot.Items.AddRange(new object[] { "Profile 1 (Lv.10)", "Profile 2 (New Game)", "Profile 3 (Empty)" });
-            cboSlot.SelectedIndex = 0; // Chọn mặc định cái đầu
+            cboSlot.SelectedIndex = 0;
             cboSlot.Location = new Point(180, 258);
             cboSlot.Size = new Size(190, 30);
             panelMain.Controls.Add(cboSlot);
 
-            SketchTextBox txtPass = new SketchTextBox(clrBackground, clrBorder, clrText, true);
-            txtPass.Location = new Point(30, 200);
-            txtPass.Size = new Size(340, 45);
-            panelMain.Controls.Add(txtPass);
-
+            // --- Button Login ---
             SketchButton btnLogin = new SketchButton();
             btnLogin.Text = "Login System";
             btnLogin.Font = new Font(handFont, 16, FontStyle.Bold);
             btnLogin.BackColor = clrPrimary;
             btnLogin.ForeColor = Color.White;
-            btnLogin.Location = new Point(30, 310); // Dời xuống một chút
+            btnLogin.Location = new Point(30, 310);
             btnLogin.Size = new Size(340, 55);
 
             btnLogin.Click += (s, e) =>
@@ -205,52 +139,32 @@ namespace WindowsForm
                 string p = txtPass.TextValue;
                 string role = "";
 
-                // --- GIẢ LẬP CHECK DATABASE ---
-                if (u == "admin" && p == "admin")
-                {
-                    role = "Admin"; // Quản trị viên: Full quyền
-                }
-                else if (u == "user" && p == "123")
-                {
-                    role = "User";  // Người chơi thường: Bị giới hạn
-                }
+                if (u == "admin" && p == "admin") role = "Admin";
+                else if (u == "user" && p == "123") role = "User";
                 else
                 {
-                    MessageBox.Show("Sai tài khoản hoặc mật khẩu!\n(Gợi ý: admin/admin hoặc user/123)", "Lỗi Đăng Nhập", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    MessageBox.Show("Sai tài khoản hoặc mật khẩu!\n(Gợi ý: admin/admin)", "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
                     return;
                 }
 
-                // --- ĐĂNG NHẬP THÀNH CÔNG ---
-                this.Hide(); // Ẩn form Login
-
-                // Truyền Role và Slot vừa chọn sang Form Main
+                this.Hide();
                 frmMain gameForm = new frmMain(role, cboSlot.SelectedItem.ToString());
-
-                gameForm.FormClosed += (sender, args) => this.Close(); // Đóng app khi tắt game
+                gameForm.FormClosed += (sender, args) => this.Close();
                 gameForm.Show();
             };
             panelMain.Controls.Add(btnLogin);
 
-
-            Label lblForgot = new Label();
-            lblForgot.Text = "Forgot password?";
-            lblForgot.Font = new Font(handFont, 10, FontStyle.Underline);
-            lblForgot.ForeColor = clrText;
-            lblForgot.AutoSize = true;
-            lblForgot.Cursor = Cursors.Hand;
-            lblForgot.Location = new Point(30, 360);
+            // --- Links ---
+            Label lblForgot = new Label() { Text = "Forgot password?", Font = new Font(handFont, 10, FontStyle.Underline), ForeColor = clrText, AutoSize = true, Cursor = Cursors.Hand, Location = new Point(30, 380) };
             panelMain.Controls.Add(lblForgot);
 
-            Label lblSignUp = new Label();
-            lblSignUp.Text = "Create Account";
-            lblSignUp.Font = new Font(handFont, 10, FontStyle.Underline);
-            lblSignUp.ForeColor = clrPrimary;
-            lblSignUp.AutoSize = true;
-            lblSignUp.Cursor = Cursors.Hand;
-            lblSignUp.Location = new Point(240, 360);
+            Label lblSignUp = new Label() { Text = "Create Account", Font = new Font(handFont, 10, FontStyle.Underline), ForeColor = clrPrimary, AutoSize = true, Cursor = Cursors.Hand, Location = new Point(240, 380) };
             panelMain.Controls.Add(lblSignUp);
         }
 
+        // ==========================================
+        // 3. XỬ LÝ LAYOUT (CĂN GIỮA)
+        // ==========================================
         protected override void OnResize(EventArgs e)
         {
             base.OnResize(e);
@@ -259,16 +173,33 @@ namespace WindowsForm
 
         private void UpdateLayout()
         {
-            if (panelMain == null) return;
+            if (panelMain == null || picBackground == null) return;
 
-            int rightCenterX = (this.ClientSize.Width / 4) * 3;
-            int centerY = this.ClientSize.Height / 2;
+            // Căn Panel Login lệch sang phải một chút cho đẹp (giống thiết kế landing page)
+            // Hoặc nếu muốn ra chính giữa màn hình thì dùng công thức:
+            // X = (this.ClientSize.Width - panelMain.Width) / 2
 
-            panelMain.Location = new Point(rightCenterX - (panelMain.Width / 2), centerY - (panelMain.Height / 2));
-            lblFooter.Location = new Point((this.ClientSize.Width - lblFooter.Width) / 2, this.ClientSize.Height - 40);
+            int rightCenterX = (this.ClientSize.Width / 4) * 3; // Lệch phải 3/4 màn hình
+            int centerY = (this.ClientSize.Height - panelMain.Height) / 2;
+
+            // Nếu màn hình quá nhỏ thì đưa về chính giữa
+            if (this.ClientSize.Width < 800)
+            {
+                rightCenterX = (this.ClientSize.Width - panelMain.Width) / 2;
+            }
+
+            panelMain.Location = new Point(rightCenterX - (panelMain.Width / 2), centerY);
+
+            // Footer nằm dưới cùng chính giữa
+            if (lblFooter != null)
+            {
+                lblFooter.Location = new Point((this.ClientSize.Width - lblFooter.Width) / 2, this.ClientSize.Height - 40);
+            }
         }
 
-        // --- Custom Controls ---
+        // ==========================================
+        // 4. CÁC CLASS CUSTOM CONTROLS (Giữ nguyên để giao diện Login đẹp)
+        // ==========================================
         public class SketchPanel : Panel
         {
             private Color _bgColor, _borderColor;
@@ -277,8 +208,11 @@ namespace WindowsForm
             {
                 Graphics g = e.Graphics; g.SmoothingMode = SmoothingMode.AntiAlias;
                 Rectangle rect = this.ClientRectangle; rect.Inflate(-5, -5);
+                // Vẽ bóng đổ nhẹ
                 using (SolidBrush s = new SolidBrush(Color.FromArgb(50, 0, 0, 0))) g.FillRectangle(s, rect.X + 6, rect.Y + 6, rect.Width, rect.Height);
+                // Vẽ nền
                 using (SolidBrush b = new SolidBrush(_bgColor)) g.FillRectangle(b, rect);
+                // Vẽ viền
                 using (Pen p = new Pen(_borderColor, 3)) g.DrawRectangle(p, rect);
             }
         }
