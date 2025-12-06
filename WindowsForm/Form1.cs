@@ -137,20 +137,29 @@ namespace WindowsForm
             {
                 string u = txtUser.TextValue;
                 string p = txtPass.TextValue;
-                string role = "";
 
-                if (u == "admin" && p == "admin") role = "Admin";
-                else if (u == "user" && p == "123") role = "User";
+                // --- GỌI DATABASE ĐỂ KIỂM TRA ---
+                DatabaseHelper db = new DatabaseHelper();
+                string role = db.CheckLogin(u, p);
+
+                // Nếu role khác null nghĩa là tìm thấy tài khoản
+                if (!string.IsNullOrEmpty(role))
+                {
+                    // --- ĐĂNG NHẬP THÀNH CÔNG ---
+                    MessageBox.Show($"Đăng nhập thành công! Quyền: {role}", "Thông báo");
+
+                    this.Hide();
+
+                    // Truyền Role thật từ Database vào
+                    frmMain gameForm = new frmMain(role, cboSlot.SelectedItem.ToString());
+                    gameForm.FormClosed += (sender, args) => this.Close();
+                    gameForm.Show();
+                }
                 else
                 {
-                    MessageBox.Show("Sai tài khoản hoặc mật khẩu!\n(Gợi ý: admin/admin)", "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                    return;
+                    // --- ĐĂNG NHẬP THẤT BẠI ---
+                    MessageBox.Show("Sai tài khoản hoặc mật khẩu!\nVui lòng kiểm tra lại.", "Lỗi Đăng Nhập", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }
-
-                this.Hide();
-                frmMain gameForm = new frmMain(role, cboSlot.SelectedItem.ToString());
-                gameForm.FormClosed += (sender, args) => this.Close();
-                gameForm.Show();
             };
             panelMain.Controls.Add(btnLogin);
 
