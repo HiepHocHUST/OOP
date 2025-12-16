@@ -63,6 +63,26 @@ namespace WindowsForm.Properties {
         /// <summary>
         ///   Looks up a localized resource of type System.Drawing.Bitmap.
         /// </summary>
+        internal static System.Drawing.Bitmap anh_nen {
+            get {
+                object obj = ResourceManager.GetObject("anh_nen", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
+        internal static System.Drawing.Bitmap Screenshot_2025_12_13_183419 {
+            get {
+                object obj = ResourceManager.GetObject("Screenshot_2025_12_13_183419", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
         internal static System.Drawing.Bitmap trang_chủ_admin_game_stickman {
             get {
                 object obj = ResourceManager.GetObject("trang_chủ_admin_game_stickman", resourceCulture);

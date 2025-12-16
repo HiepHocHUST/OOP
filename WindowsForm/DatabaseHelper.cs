@@ -11,7 +11,7 @@ namespace WindowsForm
         private string server = "localhost";
         private string database = "gamerpg_db"; // <--- Tên Database bạn vừa chạy SQL
         private string uid = "root";            // Tên đăng nhập MySQL (mặc định là root)
-        private string password = "mk";        // <--- Mật khẩu MySQL Workbench của bạn
+        private string password = "Hiep2005@HAIHAU";        // <--- Mật khẩu MySQL Workbench của bạn
 
         public MySqlConnection GetConnection()
         {
@@ -46,7 +46,7 @@ namespace WindowsForm
 
                             // 2. NẾU ĐÚNG: Cập nhật thời gian LastLogin
                             // (Lệnh này chạy ngầm, không cần chờ kết quả)
-                            string updateQuery = "UPDATE Users SET LastLogin = NOW() WHERE Username = @u";
+                            string updateQuery = "UPDATE users SET LastLogin = NOW() WHERE Username = @u";
                             using (MySqlCommand updateCmd = new MySqlCommand(updateQuery, conn))
                             {
                                 updateCmd.Parameters.AddWithValue("@u", username);

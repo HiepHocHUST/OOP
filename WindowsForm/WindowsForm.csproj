@@ -99,6 +99,9 @@
     <Compile Include="Form1.cs">
       <SubType>Form</SubType>
     </Compile>
+    <Compile Include="frmBase.cs">
+      <SubType>Form</SubType>
+    </Compile>
     <Compile Include="frmMain.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -130,6 +133,12 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\trang_chủ_admin_game_stickman.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\anh_nen.jpg" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\Screenshot 2025-12-13 183419.png" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
