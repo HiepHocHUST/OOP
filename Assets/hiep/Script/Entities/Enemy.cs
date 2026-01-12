@@ -1,15 +1,20 @@
 using UnityEngine;
+using System.Collections;
+using Core;
 
 namespace Gameplay.Entities
 {
     public class Enemy : Unit
     {
-        [Header("Loot Info")]
-        public int expReward;
-        public int goldDropMin;
-        public int goldDropMax;
+        [Header("--- KẾT NỐI DATABASE ---")]
+        public int enemyID; // ⚠️ QUAN TRỌNG: ĐIỀN ID (101, 1001...) VÀO ĐÂY
 
-        // Cho phép các script AI bên ngoài điều khiển cơ thể này
+        // Các biến này sẽ được nạp từ DB, ẩn đi cho đỡ rối Inspector
+        [HideInInspector] public bool isBoss = false;
+        [HideInInspector] public int expReward;
+        [HideInInspector] public int goldDropMin;
+        [HideInInspector] public int goldDropMax;
+
         [HideInInspector] public Rigidbody2D rb;
         [HideInInspector] public SpriteRenderer spriteRenderer;
 
@@ -19,48 +24,49 @@ namespace Gameplay.Entities
             spriteRenderer = GetComponent<SpriteRenderer>();
         }
 
+        // Hàm nhận dữ liệu từ AI
         public void SetupData(string name, int hp, int dmg, int exp, int minGold, int maxGold)
         {
             unitName = name;
             maxHp = hp;
+            currentHp = hp; // Hồi đầy máu
             damage = dmg;
-            currentHp = maxHp;
             expReward = exp;
             goldDropMin = minGold;
             goldDropMax = maxGold;
 
-            // Không tự tìm target ở đây nữa, để AI lo
+            Debug.Log($"✅ [DB LOAD] {unitName} (ID:{enemyID}) - HP: {maxHp}");
         }
 
-        // Xử lý va chạm gây damage (Giữ nguyên)
-        private void OnCollisionEnter2D(Collision2D collision)
+        public override void TakeDamage(int dmg)
         {
-            if (collision.gameObject.CompareTag("Player"))
-            {
-                Player player = collision.gameObject.GetComponent<Player>();
-                if (player != null)
-                {
-                    // Đẩy lùi Player
-                    Rigidbody2D playerRb = player.GetComponent<Rigidbody2D>();
-                    if (playerRb != null)
-                    {
-                        Vector2 pushDir = (player.transform.position - transform.position).normalized;
-                        playerRb.AddForce(pushDir * 5f, ForceMode2D.Impulse);
-                    }
-                    // Trừ máu
-                    player.TakeDamage(this.damage);
-                }
-            }
+            if (maxHp <= 0) return;
+            currentHp -= dmg;
+            if (spriteRenderer != null) StartCoroutine(FlashRed());
+            if (currentHp <= 0) Die();
         }
 
         protected override void Die()
         {
-            // Báo cáo chết (như bài trước)
-            if (LevelManager.Instance != null) LevelManager.Instance.QuaiChet();
+            // Tính vàng rơi ngẫu nhiên
+            int finalGold = Random.Range(goldDropMin, goldDropMax + 1);
+            if (GameManager.Instance != null) GameManager.Instance.AddGold(finalGold);
 
-            int gold = Random.Range(goldDropMin, goldDropMax);
-            Debug.Log($"☠️ {unitName} chết! Rớt {gold} Vàng.");
+            // Nếu là Boss -> Thắng game
+            if (isBoss)
+            {
+                Debug.Log("🔥 BOSS DIED! VICTORY!");
+                if (GameManager.Instance != null) GameManager.Instance.Victory();
+            }
+
             Destroy(gameObject);
+        }
+
+        IEnumerator FlashRed()
+        {
+            spriteRenderer.color = Color.red;
+            yield return new WaitForSeconds(0.1f);
+            spriteRenderer.color = Color.white;
         }
 
         public override void CalculateStats() { }

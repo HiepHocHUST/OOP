@@ -1,4 +1,5 @@
 using UnityEngine;
+using Gameplay.Entities; // <--- Thêm dòng này
 
 namespace Gameplay.Combat
 {
@@ -22,14 +23,12 @@ namespace Gameplay.Combat
             rb.useFullKinematicContacts = true;
         }
 
-        // 👇 ĐÃ CẬP NHẬT: Thêm tham số newSpeed
         public void Setup(Vector2 _dir, int _dmg, float _newSpeed)
         {
             direction = _dir.normalized;
             damage = _dmg;
-            speed = _newSpeed; // Gán tốc độ từ Skill vào đạn
+            speed = _newSpeed;
 
-            // Xoay mũi viên đạn
             float angle = Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg;
             transform.rotation = Quaternion.AngleAxis(angle, Vector3.forward);
 
@@ -38,7 +37,6 @@ namespace Gameplay.Combat
 
         void FixedUpdate()
         {
-            // Đạn tự bay dựa trên speed đã được Setup
             rb.linearVelocity = direction * speed;
         }
 
@@ -46,14 +44,16 @@ namespace Gameplay.Combat
         {
             if (collision.CompareTag("Player")) return;
 
-            Gameplay.Entities.Enemy enemy = collision.GetComponent<Gameplay.Entities.Enemy>();
+            // Code gọn hơn nhờ dòng using ở trên
+            Enemy enemy = collision.GetComponent<Enemy>();
+
             if (enemy != null)
             {
-                // Debug.Log($"Đạn trúng {collision.name}, gây {damage} sát thương!");
-                enemy.TakeDamage(damage);
+                enemy.TakeDamage(damage); // Đúng logic trừ máu
                 HitSomething();
             }
-            else if (collision.CompareTag("Ground") || collision.CompareTag("Wall"))
+            // Đảm bảo tường/đất có Tag này trong Unity
+            else if (collision.CompareTag("Ground"))
             {
                 HitSomething();
             }

@@ -7,128 +7,128 @@ namespace Gameplay.Skills
     public class WarriorSkills : HeroSkillSet
     {
         [Header("--- CẤU HÌNH ĐẠN (SKILL Q) ---")]
-        public GameObject fireballPrefab; // Kéo Prefab Cầu Lửa
+        public GameObject fireballPrefab;
         public float fireballSpeed = 10f;
 
         [Header("--- CẤU HÌNH DIỆN RỘNG (SKILL W & E) ---")]
-        public float radiusW = 3.0f;  // Phạm vi chiêu W
-        public float radiusE = 6.0f;  // Phạm vi chiêu E (Rất rộng)
-        public GameObject effectW;    // Kéo VFX Dậm đất/Xoay kiếm (nếu có)
-        public GameObject effectE;    // Kéo VFX Nổ lớn (nếu có)
+        public float radiusW = 3.0f;
+        public float radiusE = 6.0f;
+        public GameObject effectW;
+        public GameObject effectE;
 
         private void Start()
         {
-            // 1. CẤU HÌNH MANA VÀ HỒI CHIÊU
+            attackSpeed = 0.8f;
+            attackDelay = 0.3f;
+
             manaQ = 10; cooldownQ = 1.0f;
-            manaW = 20; cooldownW = 4.0f;  // Hồi chiêu trung bình
-            manaE = 60; cooldownE = 12.0f; // Chiêu cuối hồi lâu
+            manaW = 20; cooldownW = 4.0f;
+            manaE = 60; cooldownE = 12.0f;
         }
 
-        // --- TEST NHANH (Xóa sau khi gắn Animation Event xong) ---
-        private void Update()
-        {
-            // Nếu lười gắn Event, bấm T và Y để test damge luôn
-            if (Input.GetKeyDown(KeyCode.T)) CastSkillW();
-            if (Input.GetKeyDown(KeyCode.Y)) CastSkillE();
-        }
-
-        // --- ĐÁNH THƯỜNG ---
+        // ==========================================================
+        // 👇 ĐÁNH THƯỜNG CÓ LOG CHI TIẾT 👇
+        // ==========================================================
         public override void BasicAttack()
         {
-            if (player == null || player.attackPoint == null) return;
-            Collider2D[] hitEnemies = Physics2D.OverlapCircleAll(player.attackPoint.position, player.attackRange, player.enemyLayers);
-            foreach (var enemy in hitEnemies)
+            Debug.Log("⚔️ [4] Warrior BasicAttack: Đã được gọi! Bắt đầu xử lý...");
+
+            // Kiểm tra Player
+            if (player == null)
             {
-                if (enemy != null) enemy.GetComponent<Enemy>()?.TakeDamage(player.damage);
+                Debug.LogError("❌ [LỖI] Biến 'player' bị Null! Kiểm tra lại Initialize.");
+                return;
+            }
+
+            // Kiểm tra Attack Point
+            if (player.attackPoint == null)
+            {
+                Debug.LogError("🛑 [LỖI TO] Bạn chưa kéo GameObject 'AttackPoint' vào Inspector của Player!");
+                return;
+            }
+
+            // Log vị trí và phạm vi quét
+            Debug.Log($"🔍 Đang quét tại: {player.attackPoint.position} - Bán kính: {player.attackRange}");
+
+            // Quét (Không dùng LayerMask)
+            Collider2D[] hitObjects = Physics2D.OverlapCircleAll(player.attackPoint.position, player.attackRange);
+
+            if (hitObjects.Length == 0)
+            {
+                Debug.LogWarning("⚠️ [KẾT QUẢ] Không quét trúng bất kỳ cái gì! (Check AttackRange hoặc vị trí AttackPoint)");
+            }
+            else
+            {
+                Debug.Log($"✅ [KẾT QUẢ] Quét trúng {hitObjects.Length} vật thể.");
+            }
+
+            foreach (var obj in hitObjects)
+            {
+                // Bỏ qua chính mình
+                if (obj.gameObject == gameObject) continue;
+
+                // Log những gì chạm vào
+                // Debug.Log($"👉 Chạm: {obj.name} (Layer: {LayerMask.LayerToName(obj.gameObject.layer)})");
+
+                Enemy enemy = obj.GetComponent<Enemy>();
+                if (enemy != null)
+                {
+                    Debug.Log($"🩸 [HIT] Tìm thấy Enemy: {obj.name}. Gây {player.damage} sát thương!");
+                    enemy.TakeDamage(player.damage);
+                }
             }
         }
 
         // ==========================================================
-        // CHIÊU Q - CẦU LỬA (Bắn xa)
+        // CHIÊU Q, W, E (Giữ nguyên)
         // ==========================================================
         public override void CastSkillQ()
         {
-            // Kiểm tra null để tránh lỗi đỏ lòm
             if (fireballPrefab == null || player.firePoint == null) return;
-
-            // Tạo đạn
             GameObject fireball = Instantiate(fireballPrefab, player.firePoint.position, Quaternion.identity);
-
-            // Xác định hướng (Trái/Phải)
             Vector2 facingDir = player.transform.localScale.x > 0 ? Vector2.right : Vector2.left;
-
-            // Xoay đầu đạn nếu bắn sang trái
             if (facingDir == Vector2.left)
             {
                 Vector3 scale = fireball.transform.localScale;
                 scale.x = -Mathf.Abs(scale.x);
                 fireball.transform.localScale = scale;
             }
-
-            // Setup đạn
             Projectile proj = fireball.GetComponent<Projectile>();
             if (proj != null)
             {
-                int dmg = Mathf.RoundToInt(player.damage * 1.5f); // Dame 1.5 lần
+                int dmg = Mathf.RoundToInt(player.damage * 1.5f);
                 proj.Setup(facingDir, dmg, fireballSpeed);
             }
         }
 
-        // ==========================================================
-        // CHIÊU W - DẬM ĐẤT (Sát thương quanh người)
-        // ==========================================================
         public override void CastSkillW()
         {
             Debug.Log("⚔️ Warrior W: Dậm đất!");
-
-            // 1. Hiệu ứng
             if (effectW != null) Instantiate(effectW, transform.position, Quaternion.identity);
-
-            // 2. Quét quái xung quanh (Radius W)
-            Collider2D[] hitEnemies = Physics2D.OverlapCircleAll(transform.position, radiusW, player.enemyLayers);
-
-            // 3. Tính dame (Gấp 2 lần công cơ bản)
             int skillDamage = Mathf.RoundToInt(player.damage * 2.0f);
-
-            // 4. Trừ máu
-            foreach (var hit in hitEnemies)
+            Collider2D[] hitObjects = Physics2D.OverlapCircleAll(transform.position, radiusW);
+            foreach (var hit in hitObjects)
             {
+                if (hit.gameObject == gameObject) continue;
                 Enemy enemy = hit.GetComponent<Enemy>();
-                if (enemy != null)
-                {
-                    enemy.TakeDamage(skillDamage);
-                    Debug.Log($"-> Dậm trúng: {hit.name}");
-                }
+                if (enemy != null) enemy.TakeDamage(skillDamage);
             }
         }
 
-        // ==========================================================
-        // CHIÊU E - ĐỊA CHẤN (Chiêu cuối diện rộng)
-        // ==========================================================
         public override void CastSkillE()
         {
             Debug.Log("😡 Warrior E: ĐỊA CHẤN!");
-
             if (effectE != null) Instantiate(effectE, transform.position, Quaternion.identity);
-
-            // Quét phạm vi cực rộng (Radius E)
-            Collider2D[] hitEnemies = Physics2D.OverlapCircleAll(transform.position, radiusE, player.enemyLayers);
-
-            // Dame cực to (Gấp 4 lần)
             int skillDamage = Mathf.RoundToInt(player.damage * 4.0f);
-
-            foreach (var hit in hitEnemies)
+            Collider2D[] hitObjects = Physics2D.OverlapCircleAll(transform.position, radiusE);
+            foreach (var hit in hitObjects)
             {
+                if (hit.gameObject == gameObject) continue;
                 Enemy enemy = hit.GetComponent<Enemy>();
-                if (enemy != null)
-                {
-                    enemy.TakeDamage(skillDamage);
-                    Debug.Log($"-> Nổ chết: {hit.name}");
-                }
+                if (enemy != null) enemy.TakeDamage(skillDamage);
             }
         }
 
-        // Vẽ vòng tròn đỏ/vàng để căn chỉnh tầm đánh trong Scene
         private void OnDrawGizmosSelected()
         {
             Gizmos.color = Color.yellow;

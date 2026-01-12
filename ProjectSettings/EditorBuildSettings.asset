@@ -27,13 +27,13 @@ EditorBuildSettings:
     path: Assets/Scenes/SettingsScene.unity
     guid: 8f6437f325c098c48997426d9da17909
   - enabled: 1
-    path: Assets/hiep/Scenes/01_Level_Ground.unity
+    path: Assets/hiep/Scenes/Level_1.unity
     guid: 74ec9ff1b06c84948b0c2a6c124e1f6b
   - enabled: 1
-    path: Assets/hiep/Scenes/02_Level_UnderSea.unity
+    path: Assets/hiep/Scenes/Level_2.unity
     guid: 59170185f8fb3b04089e24fc821e9d46
   - enabled: 1
-    path: Assets/hiep/Scenes/03_Level.unity
+    path: Assets/hiep/Scenes/Level_3.unity
     guid: bde09bc38e8f6e247a0640a0a829437a
   m_configObjects:
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 052faaac586de48259a63d0c4782560b, type: 3}

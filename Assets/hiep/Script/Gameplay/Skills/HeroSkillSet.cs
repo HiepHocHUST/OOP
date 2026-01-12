@@ -1,6 +1,6 @@
 using UnityEngine;
 using System.Collections;
-using Gameplay.Entities; // Để nhận diện script Player
+using Gameplay.Entities;
 
 namespace Gameplay.Skills
 {
@@ -8,120 +8,135 @@ namespace Gameplay.Skills
     {
         protected Player player;
 
-        [Header("--- CẤU HÌNH MANA & COOLDOWN ---")]
-        public int manaQ = 10;
-        public float cooldownQ = 1.0f;
+        [Header("--- CẤU HÌNH ĐÁNH THƯỜNG ---")]
+        public float attackSpeed = 0.5f;
+        public float attackDelay = 0.2f;
+        protected bool isAttacking = false;
 
-        public int manaW = 20;
-        public float cooldownW = 3.0f;
+        [Header("--- CẤU HÌNH MANA & COOLDOWN SKILL ---")]
+        public int manaQ = 10; public float cooldownQ = 1.0f;
+        public int manaW = 20; public float cooldownW = 3.0f;
+        public int manaE = 40; public float cooldownE = 10.0f;
 
-        public int manaE = 50;
-        public float cooldownE = 10.0f;
-
-        // Biến kiểm tra đang hồi chiêu
         protected bool isCooldownQ = false;
         protected bool isCooldownW = false;
         protected bool isCooldownE = false;
 
-        // Khởi tạo: Nhận thông tin nhân vật để biết ai đang dùng chiêu
         public virtual void Initialize(Player _player)
         {
             player = _player;
+            Debug.Log($"✅ HeroSkillSet đã Initialize với Player: {_player.name}");
         }
 
-        public virtual void BasicAttack() { }
+        // ==========================================================
+        // 👇 ĐÁNH THƯỜNG (BASIC ATTACK)
+        // ==========================================================
+        public virtual void TryBasicAttack()
+        {
+            // [LOG 1] Kiểm tra đầu vào
+            Debug.Log("📌 [1] TryBasicAttack: Đã nhận lệnh bấm nút!");
+
+            // 1. Kiểm tra Cooldown
+            if (isAttacking)
+            {
+                Debug.LogWarning("⚠️ [Cooldown] Đang chờ hồi chiêu (Attack Speed). Bỏ qua.");
+                return;
+            }
+
+            // 2. Kích hoạt Cooldown tổng
+            StartCoroutine(AttackCooldownRoutine());
+
+            // 3. Chạy Animation
+            if (player.anim != null)
+            {
+                player.anim.ResetTrigger("Attack");
+                player.anim.SetTrigger("Attack");
+                Debug.Log("🎬 [Animation] Đã kích hoạt Trigger 'Attack'");
+            }
+            else
+            {
+                Debug.LogError("❌ [LỖI] Không tìm thấy Animator trên Player!");
+            }
+
+            // 4. Gọi bộ đếm giờ
+            Debug.Log($"⏳ [2] Bắt đầu đếm ngược {attackDelay}s để gây damage...");
+            StartCoroutine(DelayDamageRoutine());
+        }
+
+        // Coroutine: Chờ xong mới gọi hàm trừ máu
+        protected IEnumerator DelayDamageRoutine()
+        {
+            yield return new WaitForSeconds(attackDelay);
+
+            Debug.Log("⏰ [3] Hết thời gian chờ (Delay). Gọi hàm BasicAttack() ngay bây giờ!");
+            BasicAttack();
+        }
+
+        // Coroutine: Quản lý tốc độ đánh
+        protected IEnumerator AttackCooldownRoutine()
+        {
+            isAttacking = true;
+            yield return new WaitForSeconds(attackSpeed);
+            isAttacking = false;
+        }
+
+        // Hàm này Warrior/Assassin sẽ ghi đè
+        public virtual void BasicAttack()
+        {
+            Debug.LogError("❌ [LỖI] Hàm BasicAttack gốc đang chạy! Có vẻ WarriorSkills chưa override hàm này?");
+        }
 
         // ==========================================================
-        // CHIÊU Q (Trigger: Cast)
+        // CÁC SKILL KHÁC (Giữ nguyên)
         // ==========================================================
         public virtual void TryCastQ()
         {
             if (!CanCastSkill(isCooldownQ, manaQ)) return;
-
-            // Truyền hành động gán biến (val => isCooldownQ = val)
             ConsumeResources(val => isCooldownQ = val, manaQ, cooldownQ);
-
             if (player.anim != null) player.anim.SetTrigger("Cast");
-            else CastSkillQ();
+            CastSkillQ();
         }
-
         public virtual void CastSkillQ() { }
 
-
-        // ==========================================================
-        // CHIÊU W (Trigger: Strick)
-        // ==========================================================
         public virtual void TryCastW()
         {
             if (!CanCastSkill(isCooldownW, manaW)) return;
-
             ConsumeResources(val => isCooldownW = val, manaW, cooldownW);
-
             if (player.anim != null) player.anim.SetTrigger("Strick");
-            else CastSkillW();
+            CastSkillW();
         }
-
         public virtual void CastSkillW() { }
 
-
-        // ==========================================================
-        // CHIÊU E (Trigger: Until)
-        // ==========================================================
         public virtual void TryCastE()
         {
             if (!CanCastSkill(isCooldownE, manaE)) return;
-
             ConsumeResources(val => isCooldownE = val, manaE, cooldownE);
-
             if (player.anim != null) player.anim.SetTrigger("Until");
-            else CastSkillE();
+            CastSkillE();
         }
-
         public virtual void CastSkillE() { }
 
-
-        // ==========================================================
-        // CÁC HÀM HỖ TRỢ (CORE LOGIC)
-        // ==========================================================
-
-        // 1. Kiểm tra xem có đủ điều kiện tung chiêu không
         protected bool CanCastSkill(bool isCoolingDown, int manaCost)
         {
-            if (isCoolingDown) return false; // Đang hồi chiêu -> Nghỉ
-
+            if (isCoolingDown) return false;
             if (player.currentMana < manaCost)
             {
-                Debug.Log("💧 Không đủ Mana!");
-                return false; // Hết tiền -> Nghỉ
+                Debug.Log("⚠️ Không đủ Mana!");
+                return false;
             }
             return true;
         }
 
-        // 2. Trừ tài nguyên và kích hoạt hồi chiêu
-        // 👇 ĐÂY LÀ CHỖ QUAN TRỌNG NHẤT ĐÃ SỬA 👇
         protected void ConsumeResources(System.Action<bool> setCooldownState, int manaCost, float time)
         {
-            if (player != null)
-            {
-                // Thay vì viết: player.currentMana -= manaCost (Code cũ - Sai vì không cập nhật UI)
-                // Ta viết:
-                player.UseMana(manaCost);
-                // Hàm UseMana bên Player sẽ lo việc trừ tiền và gọi UIManager vẽ lại thanh mana
-            }
-
-            // Bắt đầu đếm ngược hồi chiêu
+            if (player != null && manaCost > 0) player.UseMana(manaCost);
             StartCoroutine(CooldownRoutine(setCooldownState, time));
         }
 
-        // 3. Bộ đếm thời gian hồi chiêu
         protected IEnumerator CooldownRoutine(System.Action<bool> setCooldownState, float time)
         {
-            // Set biến thành true (Đang bận)
             setCooldownState(true);
-
             yield return new WaitForSeconds(time);
-
-            // Set biến thành false (Đã rảnh)
             setCooldownState(false);
         }
     }

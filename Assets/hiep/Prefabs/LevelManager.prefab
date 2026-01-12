@@ -1,0 +1,99 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &9035014416196780418
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 9101262829138502106}
+  - component: {fileID: 8737164791053158125}
+  - component: {fileID: 1005855612729196172}
+  - component: {fileID: 4619026422258307982}
+  m_Layer: 0
+  m_Name: LevelManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &9101262829138502106
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9035014416196780418}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -4.2846, y: -0.95346, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &8737164791053158125
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9035014416196780418}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f494a4839b391aa40868741a72f8c8a8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Gameplay.Core.PlayerSpawner
+  heroPrefabs:
+  - {fileID: 0}
+  - {fileID: 7406363030877552296, guid: 1f4d9df01ed297147ad268abff11d1bb, type: 3}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 4199431699083762125, guid: 6fa9cd988e371334cb3cbb5744a853be, type: 3}
+  - {fileID: 0}
+  spawnPoint: {fileID: 0}
+  mainCamera: {fileID: 0}
+--- !u!114 &1005855612729196172
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9035014416196780418}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6d8d56f841b477a4897e778ec1d249bf, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::UIManager
+  healthBarImg: {fileID: 0}
+  manaBarImg: {fileID: 0}
+--- !u!114 &4619026422258307982
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9035014416196780418}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4bfd31af02a82734cbac887a9b7efcd5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::GameManager
+  slimeSpawnPoint: {fileID: 0}
+  bossSpawnPoint: {fileID: 0}
+  bossPrefabs:
+  - {fileID: 7587646946677339373, guid: ef4ab8ab7b1721a428c569ff069fa4d6, type: 3}
+  - {fileID: 7587646946677339373, guid: f8a0616935639394298f39f9bb252ffa, type: 3}
+  slimePrefabs:
+  - {fileID: 1937040798682417294, guid: 8338d8f2f3c56dd48978c063e149070d, type: 3}
+  - {fileID: 1018385004630986246, guid: 6d968382435b54246916a2bf46a79064, type: 3}
+  - {fileID: 1018385004630986246, guid: f10ffeed72d3e4d4b8532c56c1687805, type: 3}
+  - {fileID: 1018385004630986246, guid: 8f56cd157b1d77e4f9ee3dadbd1ff5d1, type: 3}
+  bossSpawnTime: 10
+  slimeSpawnInterval: 1
+  victoryPanel: {fileID: 0}
+  defeatPanel: {fileID: 0}
+  timerText: {fileID: 0}
+  playerScript: {fileID: 0}

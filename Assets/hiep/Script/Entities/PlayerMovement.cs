@@ -11,7 +11,7 @@ namespace Gameplay.Entities
         private Rigidbody2D rb;
         private Animator anim;
         private bool isGrounded = true;
-        private bool canMove = true; // Biến kiểm soát việc cho phép di chuyển
+        private bool canMove = true;
 
         void Awake()
         {
@@ -21,11 +21,23 @@ namespace Gameplay.Entities
 
         void Update()
         {
-            // Nếu bị khóa di chuyển (do chết hoặc choáng) thì dừng lại
             if (!canMove) return;
 
-            // 1. DI CHUYỂN
-            float moveX = Input.GetAxisRaw("Horizontal");
+            // 1. DI CHUYỂN (CHỈ DÙNG MŨI TÊN TRÁI/PHẢI)
+            float moveX = 0f;
+
+            // Nếu giữ mũi tên phải -> moveX = 1
+            if (Input.GetKey(KeyCode.RightArrow))
+            {
+                moveX = 1f;
+            }
+            // Nếu giữ mũi tên trái -> moveX = -1
+            else if (Input.GetKey(KeyCode.LeftArrow))
+            {
+                moveX = -1f;
+            }
+            // Nếu không bấm gì (hoặc bấm A/D) -> moveX vẫn bằng 0 (đứng im)
+
             rb.linearVelocity = new Vector2(moveX * moveSpeed, rb.linearVelocity.y);
 
             // 2. QUAY MẶT
@@ -38,8 +50,9 @@ namespace Gameplay.Entities
                 anim.SetFloat("Speed", Mathf.Abs(moveX));
             }
 
-            // 4. NHẢY
-            if ((Input.GetKeyDown(KeyCode.UpArrow) || Input.GetKeyDown(KeyCode.Space)) && isGrounded)
+            // 4. NHẢY (CHỈ DÙNG MŨI TÊN LÊN)
+            // Đã xóa KeyCode.Space, chỉ để lại UpArrow
+            if (Input.GetKeyDown(KeyCode.UpArrow) && isGrounded)
             {
                 rb.linearVelocity = new Vector2(rb.linearVelocity.x, jumpForce);
                 isGrounded = false;
@@ -51,13 +64,12 @@ namespace Gameplay.Entities
             if (collision.gameObject.CompareTag("Ground")) isGrounded = true;
         }
 
-        // --- HÀM MÀ FILE PLAYER ĐANG TÌM KIẾM (ĐÂY RỒI!) ---
         public void SetMobility(bool state)
         {
             canMove = state;
             if (!state && rb != null)
             {
-                rb.linearVelocity = Vector2.zero; // Dừng hẳn quán tính
+                rb.linearVelocity = Vector2.zero;
             }
         }
     }

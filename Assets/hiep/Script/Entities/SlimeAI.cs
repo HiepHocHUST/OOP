@@ -1,95 +1,85 @@
 using UnityEngine;
 using Gameplay.Entities;
+using Core;
 
 public class SlimeAI : MonoBehaviour
 {
-    [Header("--- CẤU HÌNH CƠ BẢN ---")]
+    [Header("--- HÀNH VI & DI CHUYỂN ---")]
+    public int levelToStartChasing = 2;
+    public int levelToStartFlying = 5;
     public float moveSpeed = 3f;
+    public float flySpeed = 4f;
+    public float jumpForce = 12f;
+    public LayerMask groundLayer;
+
     private Transform target;
     private Enemy enemyBody;
-
-    [Header("--- CHẾ ĐỘ THÔNG MINH (CHO MÀN KHÓ) ---")]
-    public bool enableJumping = true; // Bật cái này lên thì quái mới biết nhảy
-    public float jumpForce = 7f;      // Lực nhảy cao bao nhiêu
-    public float obstacleCheckDist = 1.0f; // Khoảng cách nhìn thấy vật cản
-    public LayerMask groundLayer;     // Lớp đất/đá (để nó biết cái gì cần nhảy qua)
-
-    [Header("--- Cảm Biến ---")]
-    public Transform wallCheckPoint;  // Vị trí con mắt (đặt ở ngang bụng/đầu gối quái)
-    public Transform groundCheckPoint; // Vị trí bàn chân (để biết đang đứng dưới đất)
-    private bool isGrounded;
+    private int currentLevel;
 
     void Start()
     {
         enemyBody = GetComponent<Enemy>();
-        if (enemyBody == null) Debug.LogError("❌ Thiếu script Enemy!");
+        currentLevel = Mathf.Max(1, GameManager.CurrentMapLevel); // Đảm bảo level tối thiểu là 1
+
+        // --- ĐOẠN CODE KẾT NỐI DB ---
+        HistoryManager db = FindObjectOfType<HistoryManager>();
+
+        // Chỉ chạy nếu có DB và có ID trong Enemy
+        if (db != null && enemyBody != null && enemyBody.enemyID != 0)
+        {
+            var data = db.GetEnemyStats(enemyBody.enemyID);
+            if (data != null)
+            {
+                // Công thức: Mỗi màn chơi quái mạnh thêm 20%
+                float growth = 1f + ((currentLevel - 1) * 0.2f);
+
+                int finalHp = Mathf.RoundToInt(data.hp * growth);
+                int finalDmg = Mathf.RoundToInt(data.dmg * growth);
+
+                // Nạp vào Enemy
+                enemyBody.isBoss = data.isBoss;
+                enemyBody.SetupData(data.name, finalHp, finalDmg, data.exp * currentLevel, data.minG * currentLevel, data.maxG * currentLevel);
+
+                // Chỉnh kích thước theo DB
+                transform.localScale = Vector3.one * data.scale;
+            }
+        }
+        else
+        {
+            Debug.LogWarning($"⚠️ {gameObject.name} chưa điền EnemyID hoặc không tìm thấy HistoryManager!");
+        }
+
+        SetupGravity();
+        FindPlayer();
+    }
+
+    void SetupGravity()
+    {
+        if (enemyBody.rb != null)
+            enemyBody.rb.gravityScale = (currentLevel >= levelToStartFlying) ? 0 : 1;
     }
 
     void FixedUpdate()
     {
-        // 1. Tìm Player nếu chưa có
-        if (target == null)
-        {
-            FindPlayer();
-            return;
-        }
-        if (enemyBody == null) return;
+        if (target == null) { FindPlayer(); return; }
 
-        // 2. Logic di chuyển
-        float direction = Mathf.Sign(target.position.x - transform.position.x);
-
-        // Giữ nguyên vận tốc Y (để rơi tự do), chỉ thay đổi X
-        enemyBody.rb.linearVelocity = new Vector2(direction * moveSpeed, enemyBody.rb.linearVelocity.y);
-
-        // Quay mặt
-        if (enemyBody.spriteRenderer != null)
-            enemyBody.spriteRenderer.flipX = (direction < 0);
-
-        // 3. LOGIC NHẢY (CHỈ DÀNH CHO QUÁI THÔNG MINH)
-        if (enableJumping)
-        {
-            CheckObstacleAndJump(direction);
-        }
+        if (currentLevel >= levelToStartFlying) Fly();
+        else if (currentLevel >= levelToStartChasing) Walk();
     }
 
-    void CheckObstacleAndJump(float moveDir)
+    void Fly()
     {
-        // A. Kiểm tra xem có đang đứng dưới đất không? (Không được nhảy 2 bước trên không)
-        // Tạo một vòng tròn nhỏ ở chân để check đất
-        isGrounded = Physics2D.OverlapCircle(groundCheckPoint.position, 0.2f, groundLayer);
-
-        if (!isGrounded) return; // Đang bay thì thôi, không xử lý tiếp
-
-        // B. Bắn tia laser (Raycast) ra phía trước mặt để tìm cục đá
-        Vector2 rayOrigin = wallCheckPoint.position;
-        Vector2 rayDir = (moveDir > 0) ? Vector2.right : Vector2.left; // Hướng bắn theo hướng di chuyển
-
-        RaycastHit2D hitInfo = Physics2D.Raycast(rayOrigin, rayDir, obstacleCheckDist, groundLayer);
-
-        // Vẽ tia ra màn hình để bạn dễ chỉnh (Màu đỏ: chạm tường, Màu xanh: không chạm)
-        Debug.DrawRay(rayOrigin, rayDir * obstacleCheckDist, hitInfo.collider ? Color.red : Color.green);
-
-        // C. Nếu tia laser chạm vào Đất/Đá -> NHẢY!
-        if (hitInfo.collider != null)
-        {
-            Debug.Log("🧱 Thấy cục đá! Nhảy thôi!");
-            enemyBody.rb.linearVelocity = new Vector2(enemyBody.rb.linearVelocity.x, jumpForce);
-        }
+        Vector2 dir = (target.position - transform.position).normalized;
+        enemyBody.rb.linearVelocity = dir * flySpeed;
+        enemyBody.spriteRenderer.flipX = dir.x < 0;
     }
 
-    void FindPlayer()
+    void Walk()
     {
-        GameObject playerObj = GameObject.FindGameObjectWithTag("Player");
-        if (playerObj != null) target = playerObj.transform;
+        float dirX = Mathf.Sign(target.position.x - transform.position.x);
+        enemyBody.rb.linearVelocity = new Vector2(dirX * moveSpeed, enemyBody.rb.linearVelocity.y);
+        enemyBody.spriteRenderer.flipX = dirX < 0;
     }
 
-    // Hàm hỗ trợ vẽ Gizmos trong Editor để dễ set điểm check
-    void OnDrawGizmos()
-    {
-        if (groundCheckPoint != null)
-        {
-            Gizmos.color = Color.yellow;
-            Gizmos.DrawWireSphere(groundCheckPoint.position, 0.2f);
-        }
-    }
+    void FindPlayer() { GameObject p = GameObject.FindGameObjectWithTag("Player"); if (p) target = p.transform; }
 }

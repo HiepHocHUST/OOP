@@ -15,10 +15,9 @@ GameObject:
   - component: {fileID: 1117656193593909260}
   - component: {fileID: 537345106621891642}
   - component: {fileID: 1429209816843878135}
-  - component: {fileID: 4459950182985032029}
-  m_Layer: 3
+  m_Layer: 6
   m_Name: SlimeMushroom
-  m_TagString: Untagged
+  m_TagString: Enemy
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -114,6 +113,8 @@ MonoBehaviour:
   maxHp: 0
   damage: 0
   defense: 0
+  enemyID: 102
+  isBoss: 0
   expReward: 0
   goldDropMin: 0
   goldDropMax: 0
@@ -226,24 +227,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a529fddf8cf0dff408a98d37aa543d43, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::SlimeAI
+  levelToStartChasing: 2
+  levelToStartFlying: 5
   moveSpeed: 3
---- !u!114 &4459950182985032029
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1018385004630986246}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 0c258a145fa11e14d8ddeb3203b0e95a, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Gameplay.Entities.AutoScaleStats
-  baseHealth: 20
-  baseDamage: 5
-  baseExp: 10
-  healthPerLevel: 10
-  damagePerLevel: 2
-  expPerLevel: 5
-  increaseSize: 1
-  sizePerLevel: 0.05
+  flySpeed: 4
+  jumpForce: 8
+  groundLayer:
+    serializedVersion: 2
+    m_Bits: 0

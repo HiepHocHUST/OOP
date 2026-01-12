@@ -1,36 +1,52 @@
 using UnityEngine;
 using Gameplay.Skills; // Để dùng WarriorSkills, MageSkills...
 using Gameplay.Core;   // Để dùng HeroData
-using Core;            // Để dùng DataManager
+using Core;            // Để dùng DataManager (GameManager)
 
 namespace Gameplay.Entities
 {
+    // --- CLASS ĐỊNH NGHĨA TRANG BỊ ---
+    // (Giúp bạn tạo vũ khí/giáp ngay trên Inspector hoặc load từ DB)
+    [System.Serializable]
+    public class EquipmentItem
+    {
+        public string itemName;
+        public int bonusHp;   // Máu cộng thêm
+        public int bonusMana; // Mana cộng thêm
+        public int bonusStr;  // Sức mạnh cộng thêm (Tăng damage)
+    }
+
     [RequireComponent(typeof(PlayerMovement))]
     public class Player : Unit
     {
         [Header("--- CÀI ĐẶT HÌNH DẠNG (SKIN) ---")]
-        [Tooltip("Kéo thả Animator Controller tương ứng với ID vào đây. Element 1 = Warrior, Element 2 = Mage...")]
+        [Tooltip("Kéo thả Animator Controller tương ứng với ID vào đây.")]
         public RuntimeAnimatorController[] heroAnimators;
+
+        [Header("--- TRANG BỊ (EQUIPMENT) ---")]
+        public EquipmentItem weapon; // Kéo thả hoặc nhập số trực tiếp trên Inspector để test
+        public EquipmentItem armor;
 
         [Header("Stats References")]
         public int heroID = 1;
         public int str, agi, intelligence;
         public int currentMana;
         public int maxMana;
-        public float manaRegenRate = 5f; // Mana hồi mỗi giây
-        public float manaTimer;    // Bộ đếm thời gian hồi mana
+        public float manaRegenRate = 5f;
+        public float manaTimer;
+
         [Header("Combat References")]
         public Transform attackPoint;
         public float attackRange = 1.0f;
         public LayerMask enemyLayers;
 
         [Header("Skill References")]
-        public Transform firePoint;     // Điểm bắn (cho Assassin/Archer)
-        public Transform castPoint;     // Điểm tung chiêu (cho Warrior/Mage)
-        public GameObject projectilePrefab; // Prefab đạn cơ bản (nếu cần)
+        public Transform firePoint;
+        public Transform castPoint;
+        public GameObject projectilePrefab;
         public GameObject skillQ_VFX;
 
-        // 👇 ĐÃ SỬA: Khai báo thẳng là HeroSkillSet để đỡ phải ép kiểu
+        // Script kỹ năng (WarriorSkills, AssassinSkills...)
         public HeroSkillSet mySkills;
 
         public Animator anim;
@@ -57,11 +73,13 @@ namespace Gameplay.Entities
                 {
                     this.heroID = myData.HeroID;
                     this.unitName = myData.Name;
-                    this.maxHp = myData.BaseHP;
-                    this.currentHp = myData.BaseHP;
-                    this.damage = myData.BaseAtk;
-                    this.maxMana = myData.BaseMana;
-                    this.currentMana = this.maxMana;
+
+                    // Gán chỉ số cơ bản
+                    this.str = 10; // (Ví dụ: Lấy từ DB nếu có cột Str)
+                    this.intelligence = 5;
+
+                    // Lưu ý: Các chỉ số maxHp, damage sẽ được tính lại trong hàm CalculateStats()
+                    // dựa trên Str/Int và Trang bị.
                 }
             }
             else
@@ -70,138 +88,128 @@ namespace Gameplay.Entities
                 SetupData(selectedID, "Test Hero", 10, 5, 5, 20, 5);
             }
 
-            // --- BƯỚC 3: THAY ĐỔI HÌNH DẠNG (ANIMATOR) ---
+            // --- BƯỚC 3: TÍNH TOÁN CHỈ SỐ LẦN ĐẦU ---
+            // (Phải gọi sau khi đã có Str/Int và Weapon/Armor)
+            CalculateStats();
+            this.currentHp = this.maxHp;
+            this.currentMana = this.maxMana;
+
+            // --- BƯỚC 4: THAY ĐỔI HÌNH DẠNG ---
             ChangeVisuals(selectedID);
 
-            // --- BƯỚC 4: TỰ ĐỘNG LẤY SKILL ---
-            // Tìm script skill (WarriorSkills/AssassinSkills) gắn trên người
+            // --- BƯỚC 5: TỰ ĐỘNG LẤY SKILL ---
             mySkills = GetComponent<HeroSkillSet>();
-
             if (mySkills != null)
             {
                 Debug.Log("✅ Đã tìm thấy bộ kỹ năng: " + mySkills.GetType().Name);
-                // Khởi động Skill (Nạp thông tin Player vào cho Skill dùng)
                 mySkills.Initialize(this);
             }
             else
             {
-                Debug.LogError("❌ LỖI: Prefab này chưa được gắn Script Skill (AssassinSkills/WarriorSkills...) trong Inspector!");
+                Debug.LogError("❌ LỖI: Prefab chưa gắn Script Skill!");
             }
 
-            if (UIManager.Instance != null)
-            {
-                // Cập nhật thanh máu và mana ngay khi game bắt đầu
-                UIManager.Instance.UpdateHP(currentHp, maxHp);
-                UIManager.Instance.UpdateMana(currentMana, maxMana);
-            }
+            // Cập nhật UI ban đầu
+            UpdateUI();
         }
 
-        // Hàm đổi Animator Controller
-        void ChangeVisuals(int id)
+        private void Update()
         {
-            if (heroAnimators != null && id < heroAnimators.Length && heroAnimators[id] != null)
+            // 🛑 QUAN TRỌNG: Nếu game đã kết thúc (Thắng/Thua) thì ngừng điều khiển
+            if (GameManager.Instance != null && GameManager.Instance.IsGameEnded) return;
+
+            // Kiểm tra null để tránh lỗi
+            if (mySkills == null) return;
+
+            // 1. ĐÁNH THƯỜNG
+            if (Input.GetKeyDown(KeyCode.A) || Input.GetMouseButtonDown(0))
             {
-                this.anim.runtimeAnimatorController = heroAnimators[id];
+                mySkills.TryBasicAttack();
+            }
+
+            // 2. CÁC SKILL
+            if (Input.GetKeyDown(KeyCode.Q)) mySkills.TryCastQ();
+            if (Input.GetKeyDown(KeyCode.W)) mySkills.TryCastW();
+            if (Input.GetKeyDown(KeyCode.E)) mySkills.TryCastE();
+
+            // Hồi Mana
+            HandleManaRegen();
+        }
+
+        // --- TÍNH TOÁN CHỈ SỐ (ĐÃ NÂNG CẤP ĐỂ TÍNH CẢ ĐỒ) ---
+        public override void CalculateStats()
+        {
+            int finalStr = str;
+            int finalInt = intelligence;
+            int addedHp = 0;
+            int addedMana = 0;
+
+            // 1. Cộng chỉ số từ Vũ khí
+            if (weapon != null)
+            {
+                finalStr += weapon.bonusStr;
+                addedHp += weapon.bonusHp;
+                addedMana += weapon.bonusMana;
+            }
+
+            // 2. Cộng chỉ số từ Giáp
+            if (armor != null)
+            {
+                finalStr += armor.bonusStr;
+                addedHp += armor.bonusHp;
+                addedMana += armor.bonusMana;
+            }
+
+            // 3. Áp dụng công thức RPG
+            // Máu = 200 gốc + (Sức mạnh * 20) + Máu từ đồ
+            maxHp = 200 + (finalStr * 20) + addedHp;
+
+            // Damage = 20 gốc + (Sức mạnh * 5)
+            damage = 20 + (finalStr * 5);
+
+            // Mana = Trí tuệ * 10 + Mana từ đồ
+            maxMana = (finalInt * 10) + addedMana;
+
+            // Debug để kiểm tra xem mặc đồ vào có mạnh lên không
+            Debug.Log($"🛡️ PLAYER STATS: Str={finalStr} | HP={maxHp} | Dmg={damage}");
+        }
+
+        // --- XỬ LÝ CHẾT (BÁO THUA) ---
+        protected override void Die()
+        {
+            base.Die(); // Gọi hàm cha để hủy object/hiệu ứng
+            Debug.Log("💀 PLAYER ĐÃ CHẾT!");
+
+            // Dừng di chuyển
+            if (movementScript != null) movementScript.SetMobility(false);
+
+            // Báo cho GameManager biết là Thua
+            if (GameManager.Instance != null)
+            {
+                GameManager.Instance.Defeat();
             }
         }
 
+        // --- CÁC HÀM HỖ TRỢ ---
         public void SetupData(int id, string name, int s, int a, int i, int bAtk, int bDef)
         {
             heroID = id; unitName = name;
             str = s; agi = a; intelligence = i;
-            CalculateStats();
-            currentHp = maxHp;
-            maxMana = intelligence * 10;
-            currentMana = maxMana;
+            CalculateStats(); // Tính lại ngay khi set data
         }
 
-        public override void CalculateStats()
+        void HandleManaRegen()
         {
-            maxHp = 200 + (str * 20);
-            damage = 20 + (str * 5);
-        }
-
-        // 👇👇👇 KHU VỰC QUAN TRỌNG NHẤT: XỬ LÝ PHÍM BẤM 👇👇👇
-        private void Update()
-        {
-            // 1. ĐÁNH THƯỜNG (Phím A hoặc Chuột trái)
-            if (Input.GetKeyDown(KeyCode.A) || Input.GetMouseButtonDown(0))
-            {
-                // Gọi Animation đánh thường (Nếu có)
-                if (anim != null) anim.SetTrigger("Attack");
-
-                // Gọi logic gây sát thương
-                if (mySkills != null) mySkills.BasicAttack();
-            }
-
-            // 2. SKILL Q (Phím Q)
-            if (Input.GetKeyDown(KeyCode.Q))
-            {
-                if (mySkills != null)
-                {
-                    // ⚠️ LƯU Ý: Gọi TryCastQ (để kiểm tra mana/cooldown) 
-                    // CHỨ KHÔNG gọi CastSkillQ (hàm này chỉ để animation gọi)
-                    mySkills.TryCastQ();
-                }
-            }
-
-            // 3. SKILL W (Phím W) - Đã thêm mới
-            if (Input.GetKeyDown(KeyCode.W))
-            {
-                if (mySkills != null)
-                {
-                    mySkills.TryCastW();
-                }
-            }
-
-            // 4. SKILL E (Phím E) - Đã thêm mới
-            if (Input.GetKeyDown(KeyCode.E))
-            {
-                if (mySkills != null)
-                {
-                    mySkills.TryCastE();
-                }
-            }
-
             if (currentMana < maxMana)
             {
                 manaTimer += Time.deltaTime;
-                if (manaTimer >= 1f) // Cứ mỗi 1 giây thì hồi 1 lần
+                if (manaTimer >= 1f)
                 {
                     currentMana += Mathf.RoundToInt(manaRegenRate);
-
-                    // Đảm bảo không vượt quá Max
                     if (currentMana > maxMana) currentMana = maxMana;
-
-                    // Cập nhật UI (Tí nữa mình viết hàm này)
-                    if (UIManager.Instance != null) UIManager.Instance.UpdateMana(currentMana, maxMana);
-
-                    manaTimer = 0; // Reset đồng hồ
+                    UpdateUI();
+                    manaTimer = 0;
                 }
-            }
-        }
-
-        protected override void Die()
-        {
-            base.Die();
-            Debug.Log("Player chết!");
-            if (movementScript != null) movementScript.SetMobility(false);
-        }
-
-        void OnDrawGizmosSelected()
-        {
-            if (attackPoint != null) Gizmos.DrawWireSphere(attackPoint.position, attackRange);
-        }
-
-        // Ghi đè hàm TakeDamage từ Unit.cs
-        public override void TakeDamage(int dmg)
-        {
-            base.TakeDamage(dmg); // Gọi hàm cha để trừ số liệu máu
-
-            // Gọi UI cập nhật hiển thị
-            if (UIManager.Instance != null)
-            {
-                UIManager.Instance.UpdateHP(currentHp, maxHp);
             }
         }
 
@@ -210,18 +218,43 @@ namespace Gameplay.Entities
             if (currentMana >= cost)
             {
                 currentMana -= cost;
-
-                // Cập nhật UI ngay lập tức
-                if (UIManager.Instance != null)
-                    UIManager.Instance.UpdateMana(currentMana, maxMana);
-
-                return true; // Đủ mana, cho phép tung chiêu
+                UpdateUI();
+                return true;
             }
             else
             {
                 Debug.Log("⚠️ Không đủ Mana!");
-                return false; // Hết mana, cấm tung chiêu
+                return false;
             }
+        }
+
+        void UpdateUI()
+        {
+            if (UIManager.Instance != null)
+            {
+                UIManager.Instance.UpdateHP(currentHp, maxHp);
+                UIManager.Instance.UpdateMana(currentMana, maxMana);
+            }
+        }
+
+        void ChangeVisuals(int id)
+        {
+            if (heroAnimators != null && id < heroAnimators.Length && heroAnimators[id] != null)
+            {
+                this.anim.runtimeAnimatorController = heroAnimators[id];
+            }
+        }
+
+        // Ghi đè hàm TakeDamage để cập nhật UI ngay khi mất máu
+        public override void TakeDamage(int dmg)
+        {
+            base.TakeDamage(dmg);
+            UpdateUI();
+        }
+
+        void OnDrawGizmosSelected()
+        {
+            if (attackPoint != null) Gizmos.DrawWireSphere(attackPoint.position, attackRange);
         }
     }
 }

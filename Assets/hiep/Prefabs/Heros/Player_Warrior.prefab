@@ -68,6 +68,7 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 8976766168179396218}
+  - {fileID: 2035035322563461670}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!212 &5205759967755864909
@@ -167,7 +168,7 @@ BoxCollider2D:
   m_SpriteTilingProperty:
     border: {x: 0, y: 0, z: 0, w: 0}
     pivot: {x: 0.5, y: 0}
-    oldSize: {x: 5.12, y: 2.56}
+    oldSize: {x: 8.533334, y: 4.266667}
     newSize: {x: 1, y: 1}
     adaptiveTilingThreshold: 0.5
     drawMode: 0
@@ -270,8 +271,8 @@ MonoBehaviour:
   maxMana: 0
   manaRegenRate: 5
   manaTimer: 0
-  attackPoint: {fileID: 0}
-  attackRange: 1
+  attackPoint: {fileID: 2035035322563461670}
+  attackRange: 1.5
   enemyLayers:
     serializedVersion: 2
     m_Bits: 8
@@ -293,6 +294,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 622f13141f4fce74c990665ec1f9cec4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Gameplay.Skills.WarriorSkills
+  attackSpeed: 0.5
+  attackDelay: 0.2
   manaQ: 10
   cooldownQ: 1
   manaW: 20
@@ -305,3 +308,34 @@ MonoBehaviour:
   radiusE: 6
   effectW: {fileID: 0}
   effectE: {fileID: 0}
+--- !u!1 &8933513390606397149
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2035035322563461670}
+  m_Layer: 0
+  m_Name: AttackPoint
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &2035035322563461670
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8933513390606397149}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0.8, y: 0.64, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 2532965013382692417}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
